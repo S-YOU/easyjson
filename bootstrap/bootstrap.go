@@ -30,12 +30,14 @@ type Generator struct {
 	SnakeCase                bool
 	LowerCamelCase           bool
 	OmitEmpty                bool
+	OnlyDecode               bool
 	DisallowUnknownFields    bool
 	SkipMemberNameUnescaping bool
 
 	OutName       string
 	BuildTags     string
 	GenBuildFlags string
+	GenPkg        string
 
 	StubsOnly   bool
 	LeaveTemps  bool
@@ -64,7 +66,9 @@ func (g *Generator) writeStub() error {
 	if len(g.Types) > 0 {
 		fmt.Fprintln(f)
 		fmt.Fprintln(f, "import (")
-		fmt.Fprintln(f, `  "`+pkgWriter+`"`)
+		if !g.OnlyDecode {
+			fmt.Fprintln(f, `  "`+pkgWriter+`"`)
+		}
 		fmt.Fprintln(f, `  "`+pkgLexer+`"`)
 		fmt.Fprintln(f, ")")
 	}
@@ -77,7 +81,9 @@ func (g *Generator) writeStub() error {
 			fmt.Fprintln(f, "func (*", t, ") UnmarshalJSON([]byte) error { return nil }")
 		}
 
-		fmt.Fprintln(f, "func (", t, ") MarshalEasyJSON(w *jwriter.Writer) {}")
+		if !g.OnlyDecode {
+			fmt.Fprintln(f, "func (", t, ") MarshalEasyJSON(w *jwriter.Writer) {}")
+		}
 		fmt.Fprintln(f, "func (*", t, ") UnmarshalEasyJSON(l *jlexer.Lexer) {}")
 		fmt.Fprintln(f)
 		fmt.Fprintln(f, "type EasyJSON_exporter_"+t+" *"+t)
@@ -103,7 +109,11 @@ func (g *Generator) writeMain() (path string, err error) {
 	fmt.Fprintln(f, `  "fmt"`)
 	fmt.Fprintln(f, `  "os"`)
 	fmt.Fprintln(f)
-	fmt.Fprintf(f, "  %q\n", genPackage)
+	if g.GenPkg != "" {
+		fmt.Fprintf(f, "  %q\n", g.GenPkg)
+	} else {
+		fmt.Fprintf(f, "  %q\n", genPackage)
+	}
 	if len(g.Types) > 0 {
 		fmt.Fprintln(f)
 		fmt.Fprintf(f, "  pkg %q\n", g.PkgPath)
@@ -127,6 +137,9 @@ func (g *Generator) writeMain() (path string, err error) {
 	}
 	if g.NoStdMarshalers {
 		fmt.Fprintln(f, "  g.NoStdMarshalers()")
+	}
+	if g.OnlyDecode {
+		fmt.Fprintln(f, "  g.OnlyDecode()")
 	}
 	if g.DisallowUnknownFields {
 		fmt.Fprintln(f, "  g.DisallowUnknownFields()")

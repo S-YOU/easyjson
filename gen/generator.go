@@ -35,6 +35,7 @@ type Generator struct {
 
 	noStdMarshalers          bool
 	omitEmpty                bool
+	onlyDecode               bool
 	disallowUnknownFields    bool
 	fieldNamer               FieldNamer
 	simpleBytes              bool
@@ -111,6 +112,12 @@ func (g *Generator) UseLowerCamelCase() {
 // methods (only the custom interface).
 func (g *Generator) NoStdMarshalers() {
 	g.noStdMarshalers = true
+}
+
+// OnlyDecode instructs not to only generate standard UnmarshalJSON
+// methods (only the custom interface).
+func (g *Generator) OnlyDecode() {
+	g.onlyDecode = true
 }
 
 // DisallowUnknownFields instructs not to skip unknown fields in json and return error.
@@ -207,16 +214,20 @@ func (g *Generator) Run(out io.Writer) error {
 		if err := g.genDecoder(t); err != nil {
 			return err
 		}
-		if err := g.genEncoder(t); err != nil {
-			return err
+		if !g.onlyDecode {
+			if err := g.genEncoder(t); err != nil {
+				return err
+			}
 		}
 
 		if !g.marshalers[t] {
 			continue
 		}
 
-		if err := g.genStructMarshaler(t); err != nil {
-			return err
+		if !g.onlyDecode {
+			if err := g.genStructMarshaler(t); err != nil {
+				return err
+			}
 		}
 		if err := g.genStructUnmarshaler(t); err != nil {
 			return err

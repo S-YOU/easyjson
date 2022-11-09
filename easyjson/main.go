@@ -9,10 +9,6 @@ import (
 	"strings"
 
 	"github.com/mailru/easyjson/bootstrap"
-	// Reference the gen package to be friendly to vendoring tools,
-	// as it is an indirect dependency.
-	// (The temporary bootstrapping code uses it.)
-	_ "github.com/mailru/easyjson/gen"
 	"github.com/mailru/easyjson/parser"
 )
 
@@ -23,11 +19,13 @@ var lowerCamelCase = flag.Bool("lower_camel_case", false, "use lowerCamelCase na
 var noStdMarshalers = flag.Bool("no_std_marshalers", false, "don't generate MarshalJSON/UnmarshalJSON funcs")
 var omitEmpty = flag.Bool("omit_empty", false, "omit empty fields by default")
 var allStructs = flag.Bool("all", false, "generate marshaler/unmarshalers for all structs in a file")
+var onlyDecode = flag.Bool("only_decode", false, "generate only unmarshalers for all structs in a file")
 var simpleBytes = flag.Bool("byte", false, "use simple bytes instead of Base64Bytes for slice of bytes")
 var leaveTemps = flag.Bool("leave_temps", false, "do not delete temporary files")
 var stubs = flag.Bool("stubs", false, "only generate stubs for marshaler/unmarshaler funcs")
 var noformat = flag.Bool("noformat", false, "do not run 'gofmt -w' on output file")
 var specifiedName = flag.String("output_filename", "", "specify the filename of the output")
+var genPkg = flag.String("gen_pkg", "", "specify custom gen pkg")
 var processPkg = flag.Bool("pkg", false, "process the whole package instead of just the given file")
 var disallowUnknownFields = flag.Bool("disallow_unknown_fields", false, "return error if any unknown field in json appeared")
 var skipMemberNameUnescaping = flag.Bool("disable_members_unescape", false, "don't perform unescaping of member names to improve performance")
@@ -77,11 +75,13 @@ func generate(fname string) (err error) {
 		SnakeCase:                *snakeCase,
 		LowerCamelCase:           *lowerCamelCase,
 		NoStdMarshalers:          *noStdMarshalers,
+		OnlyDecode:               *onlyDecode,
 		DisallowUnknownFields:    *disallowUnknownFields,
 		SkipMemberNameUnescaping: *skipMemberNameUnescaping,
 		OmitEmpty:                *omitEmpty,
 		LeaveTemps:               *leaveTemps,
 		OutName:                  outName,
+		GenPkg:                   *genPkg,
 		StubsOnly:                *stubs,
 		NoFormat:                 *noformat,
 		SimpleBytes:              *simpleBytes,
